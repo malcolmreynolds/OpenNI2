@@ -21,6 +21,7 @@ USED_LIBS = XnLib dl pthread
 ifeq ("$(OSTYPE)","Darwin")
 	INC_DIRS += /opt/local/include
 	LIB_DIRS += /opt/local/lib
+	LIB_DIRS += /usr/local/lib
 	LDFLAGS += -framework CoreFoundation -framework IOKit
 endif
 
