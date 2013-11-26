@@ -46,7 +46,10 @@
 // Convenience methods for using glh_linear objects
 // with opengl...
 
-
+// This is nuts! If I don't undef it I get an error compiling
+// /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/c++/v1/system_error
+// which cannot in any way be a good thing.
+#undef equivalent
 
 // debugging hack...
 #include <iostream>

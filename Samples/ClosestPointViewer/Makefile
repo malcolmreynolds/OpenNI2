@@ -11,7 +11,7 @@ INC_DIRS = \
 SRC_FILES = *.cpp
 
 ifeq ("$(OSTYPE)","Darwin")
-	CFLAGS += -DMACOS
+	CFLAGS += -DMACOS -Wno-deprecated
 	LDFLAGS += -framework OpenGL -framework GLUT
 else
 	CFLAGS += -DUNIX -DGLX_GLXEXT_LEGACY
