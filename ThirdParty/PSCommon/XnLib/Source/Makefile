@@ -3,7 +3,8 @@ include ../../BuildSystem/CommonDefs.mak
 BIN_DIR = ../Bin
 
 INC_DIRS = \
-	../Include
+	../Include \
+	/usr/local/include
 
 SRC_FILES = \
 	*.cpp \
