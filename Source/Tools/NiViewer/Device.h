@@ -26,6 +26,8 @@
 // --------------------------------
 #include <OpenNI.h>
 
+#include <sixense.h>
+
 // --------------------------------
 // Defines
 // --------------------------------
@@ -59,6 +61,7 @@ typedef struct
 	SensorOpenType openDepth;
 	SensorOpenType openColor;
 	SensorOpenType openIR;
+	OniBool b_captureSixense;
 } DeviceConfig;
 
 // --------------------------------
@@ -141,5 +144,13 @@ float getPlaybackSpeed();
 void changePlaybackSpeed(int ratioDiff);
 
 bool convertDepthPointToColor(int depthX, int depthY, openni::DepthPixel DepthZ, int* pColorX, int* pColorY);
+
+// --------------------------------
+// Sixense declarations
+// --------------------------------
+bool isSixenseEnabled();
+void setSixenseEnabled(bool enabled);
+const & sixenseControllerData getSixenseController(int controller_no);
+
 
 #endif //__DEVICE_H__

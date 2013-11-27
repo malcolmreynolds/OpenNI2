@@ -5,7 +5,8 @@ BIN_DIR = ../../../Bin
 INC_DIRS = \
 	../../../Include \
 	../../../ThirdParty/PSCommon/XnLib/Include \
-	../../../ThirdParty/GL/
+	../../../ThirdParty/GL/ \
+	/Users/malc/opt/vis/sixense/include
 
 SRC_FILES = \
 	Device.cpp  \
@@ -19,7 +20,7 @@ SRC_FILES = \
 
 ifeq ("$(OSTYPE)","Darwin")
 	CFLAGS += -DMACOS -Wno-deprecated
-	LDFLAGS += -framework OpenGL -framework GLUT
+	LDFLAGS += -framework OpenGL -framework GLUT -L/opt/local/lib -lsixense -lsixense_x64 -lsixense_utils -lsixense_utils_x64
 else
 	CFLAGS += -DUNIX -DGLX_GLXEXT_LEGACY
 	USED_LIBS += glut GL

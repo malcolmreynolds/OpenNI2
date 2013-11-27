@@ -63,6 +63,15 @@
 #endif
 
 
+// SIXENSE stuff
+#include <sixense.h>
+#include <sixense_math.hpp>
+#include <sixense_utils/derivatives.hpp>
+#include <sixense_utils/button_states.hpp>
+#include <sixense_utils/event_triggers.hpp>
+#include <sixense_utils/controller_manager/controller_manager.hpp>
+
+
 #include "Device.h"
 #include "OpenNI.h"
 #include "XnLib.h"
@@ -116,6 +125,7 @@ bool g_bPause = false;
 /* When true, only a single frame will be read, and then reading will be paused. */
 bool g_bStep = false;
 bool g_bShutdown = false;
+
 
 glut_perspective_reshaper reshaper;
 glut_callbacks cb;
@@ -599,6 +609,7 @@ int main(int argc, char **argv)
 	config.openDepth = SENSOR_TRY;
 	config.openColor = SENSOR_TRY;
 	config.openIR = SENSOR_TRY;
+	config.b_captureSixense = FALSE;
 
 	for (int i = 1; i < argc; ++i)
 	{
@@ -614,6 +625,7 @@ int main(int argc, char **argv)
 			printf("	Allows to choose the device to open from the list of connected devices\n");
 			printf("-depth=<on|off|try>\n");
 			printf("-color=<on|off|try>\n");
+			printf("-sixense=<on|off>\n");
 			printf("-ir=<on|off|try>\n");
 			printf("	Toggles each stream state. <off> means the stream will not be opened. <on> means it will be opened, and NiViewer will\n");
 			printf("	exit if it fails. <try> means that NiViewer will try to open that stream, but continue if it fails.\n");
@@ -647,6 +659,14 @@ int main(int argc, char **argv)
 		else if (strcmp(argv[i], "-color=try") == 0)
 		{
 			config.openColor = SENSOR_TRY;
+		}
+		else if (strcmp(argv[i], "-sixense=on") == 0)
+		{
+			config.b_captureSixense = TRUE;
+		}
+		else if (strcmp(argv[i], "-sixense=off") == 0)
+		{
+			config.b_captureSixense = FALSE;
 		}
 		else if (strcmp(argv[i], "-ir=on") == 0)
 		{
@@ -710,6 +730,15 @@ int main(int argc, char **argv)
 	glutCreateWindow("OpenNI Viewer");
 	glutFullScreen();
 	glutSetCursor(GLUT_CURSOR_NONE);
+
+	// if (bCaptureSixense) {
+	// 	printf("trying to initialise sixense\n");
+	// 	if (sixenseInit() != SIXENSE_SUCCESS) {
+	// 		printf("Sixense API initialisation failed\n");
+	// 		return(-1);
+	// 	}
+	// 	printf("initialised Sixense API\n");
+	// }
 
 	init_opengl();
 

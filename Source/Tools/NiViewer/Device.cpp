@@ -29,6 +29,17 @@
 #include <PS1080.h>
 
 // --------------------------------
+// Sixense Includes
+// --------------------------------
+#include <sixense.h>
+#include <sixense_math.hpp>
+#include <sixense_utils/derivatives.hpp>
+#include <sixense_utils/button_states.hpp>
+#include <sixense_utils/event_triggers.hpp>
+#include <sixense_utils/controller_manager/controller_manager.hpp>
+
+
+// --------------------------------
 // Defines
 // --------------------------------
 #define MAX_STRINGS 20
@@ -57,6 +68,10 @@ openni::VideoFrameRef g_irFrame;
 const openni::SensorInfo* g_depthSensorInfo = NULL;
 const openni::SensorInfo* g_colorSensorInfo = NULL;
 const openni::SensorInfo* g_irSensorInfo = NULL;
+
+// Sixense
+bool g_bSixenseEnabled = false;
+sixenseAllControllerData acd; // data for all the controllers
 
 // --------------------------------
 // Code
@@ -223,6 +238,22 @@ public:
 	}
 };
 
+openni::Status openSixenseDevice() {
+	if (sixenseInit() != SIXENSE_SUCCESS) {
+		printf("couldn't init Sixense library\n");
+		return openni::STATUS_ERROR;
+	}
+
+	// Init the controller manager. This makes sure the controllers are present, assigned to left and right hands, and that
+	// the hemisphere calibration is complete.
+	sixenseUtils::getTheControllerManager()->setGameType( sixenseUtils::ControllerManager::ONE_PLAYER_TWO_CONTROLLER );
+	// sixenseUtils::getTheControllerManager()->registerSetupCallback( controller_manager_setup_callback );
+
+
+	printf("done all sixense init!\n");
+	return openni::STATUS_OK;
+}
+
 openni::Status openDevice(const char* uri, DeviceConfig config)
 {
 	openni::Status nRetVal = openni::OpenNI::initialize();
@@ -247,6 +278,12 @@ openni::Status openDevice(const char* uri, DeviceConfig config)
 	if (0 != openCommon(g_device, config))
 	{
 		return openni::STATUS_ERROR;
+	}
+
+	// If we are here, then the depth camera has been opened okay.
+	// Now let's try the sixense, if requested
+	if (config.b_captureSixense) {
+		return openSixenseDevice();
 	}
 
 	return openni::STATUS_OK;
@@ -891,3 +928,28 @@ bool convertDepthPointToColor(int depthX, int depthY, openni::DepthPixel depthZ,
 
 	return (openni::STATUS_OK == openni::CoordinateConverter::convertDepthToColor(g_depthStream, g_colorStream, depthX, depthY, depthZ, pColorX, pColorY));
 }
+
+// SIXENSE STUFF
+bool isSixenseEnabled() {
+	return g_bSixenseEnabled;
+}
+
+void setSixenseEnabled(bool enabled) {
+	g_bSixenseEnabled = enabled;
+}
+
+void updateSixenseControllerData() {
+	FIXME!! this needs error handling, big style.
+	sixenseSetActiveBase(base);
+	sixenseGetAllNewestData(&acd);
+}
+
+const & sixenseControllerData getSixenseController(int controller_no) {
+
+}
+
+
+
+
+
+
