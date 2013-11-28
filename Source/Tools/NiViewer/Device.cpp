@@ -27,6 +27,7 @@
 #include <math.h>
 #include <XnLog.h>
 #include <PS1080.h>
+#include <unistd.h>
 
 // --------------------------------
 // Sixense Includes
@@ -238,21 +239,7 @@ public:
 	}
 };
 
-openni::Status openSixenseDevice() {
-	if (sixenseInit() != SIXENSE_SUCCESS) {
-		printf("couldn't init Sixense library\n");
-		return openni::STATUS_ERROR;
-	}
 
-	// Init the controller manager. This makes sure the controllers are present, assigned to left and right hands, and that
-	// the hemisphere calibration is complete.
-	sixenseUtils::getTheControllerManager()->setGameType( sixenseUtils::ControllerManager::ONE_PLAYER_TWO_CONTROLLER );
-	// sixenseUtils::getTheControllerManager()->registerSetupCallback( controller_manager_setup_callback );
-
-
-	printf("done all sixense init!\n");
-	return openni::STATUS_OK;
-}
 
 openni::Status openDevice(const char* uri, DeviceConfig config)
 {
@@ -374,6 +361,9 @@ void readFrame()
 			default:
 				printf("Error in wait\n");
 			}
+			if (isSixenseEnabled()) {
+				updateSixenseData();
+			}
 		}
 	}
 }
@@ -395,7 +385,8 @@ void toggleMirror(int )
 	toggleColorMirror(0);
 	toggleIRMirror(0);
 
-	displayMessage ("Mirror: %s", g_depthStream.getMirroringEnabled()?"On":"Off");	
+	displayMessage ("Mirror: %s", g_depthStream.getMirroringEnabled()?"On":"Off");
+
 }
 
 
@@ -464,6 +455,10 @@ void seekStream(openni::VideoStream* pStream, openni::VideoFrameRef* pCurFrame, 
 {
 	int numberOfFrames = 0;
 
+	if (isSixenseEnabled()) {
+		displayError("Sixense active, so seeking is not supported");
+	}
+
 	// Get number of frames
 	numberOfFrames = g_pPlaybackControl->getNumberOfFrames(*pStream);
 
@@ -490,7 +485,8 @@ void seekStream(openni::VideoStream* pStream, openni::VideoFrameRef* pCurFrame, 
 
 		displayMessage("Current frame: %u/%u", frameId, numberOfFrames);
 	}
-	else if ((rc == openni::STATUS_NOT_IMPLEMENTED) || (rc == openni::STATUS_NOT_SUPPORTED) || (rc == openni::STATUS_BAD_PARAMETER) || (rc == openni::STATUS_NO_DEVICE))
+	else if ((rc == openni::STATUS_NOT_IMPLEMENTED) || (rc == openni::STATUS_NOT_SUPPORTED) ||
+		     (rc == openni::STATUS_BAD_PARAMETER) || (rc == openni::STATUS_NO_DEVICE))
 	{
 		displayError("Seeking is not supported");
 	}
@@ -930,6 +926,29 @@ bool convertDepthPointToColor(int depthX, int depthY, openni::DepthPixel depthZ,
 }
 
 // SIXENSE STUFF
+openni::Status openSixenseDevice() {
+	if (sixenseInit() != SIXENSE_SUCCESS) {
+		printf("couldn't init Sixense library\n");
+		return openni::STATUS_ERROR;
+	}
+
+	setSixenseEnabled(true);
+	sleep(5);
+	if (!sixenseIsBaseConnected(0)) {
+		printf("Sixense base not connected!\n");
+		return openni::STATUS_ERROR;
+	}
+
+	// Init the controller manager. This makes sure the controllers are present, assigned to left and right hands, and that
+	// the hemisphere calibration is complete.
+	sixenseUtils::getTheControllerManager()->setGameType( sixenseUtils::ControllerManager::ONE_PLAYER_TWO_CONTROLLER );
+	// sixenseUtils::getTheControllerManager()->registerSetupCallback( controller_manager_setup_callback );
+
+
+	printf("done all sixense init!\n");
+	return openni::STATUS_OK;
+}
+
 bool isSixenseEnabled() {
 	return g_bSixenseEnabled;
 }
@@ -938,15 +957,38 @@ void setSixenseEnabled(bool enabled) {
 	g_bSixenseEnabled = enabled;
 }
 
-void updateSixenseControllerData() {
-	FIXME!! this needs error handling, big style.
-	sixenseSetActiveBase(base);
-	sixenseGetAllNewestData(&acd);
+openni::Status updateSixenseData() {
+	if (!g_bSixenseEnabled) {
+		displayMessage("tried to update when sixense not enabled!");
+	}
+	// FIXME!! this needs error handling, big style.
+	if (sixenseSetActiveBase(0) != SIXENSE_SUCCESS) {
+		printf("SetActiveBase failed\n");
+		return openni::STATUS_ERROR;
+	}
+	if (sixenseGetAllNewestData(&acd) != SIXENSE_SUCCESS) {
+		printf("getAllNewestData failed\n");
+		return openni::STATUS_ERROR;
+	}
+	// printf("controller 0 pos: %f %f %f\n",
+	// 	acd.controllers[0].pos[0], acd.controllers[0].pos[1], acd.controllers[0].pos[2]);
+	return openni::STATUS_OK;
 }
 
-const & sixenseControllerData getSixenseController(int controller_no) {
-
+const sixenseControllerData & getSixenseController(int controller_no) {
+	return acd.controllers[controller_no];
 }
+
+void getSixenseMessage(char* output_buffer) {
+	const sixenseControllerData & c0 = getSixenseController(0);
+	const sixenseControllerData & c1 = getSixenseController(1);
+	sprintf(output_buffer, "c1:[%4.1f %4.1f %4.1f][%0.3f %0.3f %0.3f; %0.3f %0.3f %0.3f; %0.3f %0.3f %0.3f]\n",
+		c0.pos[0], c0.pos[1], c0.pos[2],
+		c0.rot_mat[0][0], c0.rot_mat[0][1], c0.rot_mat[0][2],
+		c0.rot_mat[1][0], c0.rot_mat[1][1], c0.rot_mat[1][2],
+		c0.rot_mat[2][0], c0.rot_mat[2][1], c0.rot_mat[2][2]);
+}
+
 
 
 

@@ -1474,6 +1474,12 @@ void printRecordingInfo()
 		captureGetIRFormatName());
 
 	drawCenteredMessage(GLUT_BITMAP_HELVETICA_12, WIN_SIZE_Y - 3, csMessage, 0, 1, 0);
+
+	if (isSixenseEnabled()) {
+		char sixenseMessage[512];
+		getSixenseMessage(sixenseMessage);
+		drawCenteredMessage(GLUT_BITMAP_HELVETICA_12, WIN_SIZE_Y - 50, sixenseMessage, 1, 1, 1);
+	}
 }
 
 void printHelpGroup(int nXLocation, int* pnYLocation, const char* csGroup)

@@ -192,6 +192,9 @@ void idleCallback()
 	{
 		// read a frame
 		readFrame();
+		if (isSixenseEnabled()) {
+			
+		}
 
 		captureRun();
 	}

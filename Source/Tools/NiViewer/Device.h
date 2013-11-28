@@ -148,9 +148,11 @@ bool convertDepthPointToColor(int depthX, int depthY, openni::DepthPixel DepthZ,
 // --------------------------------
 // Sixense declarations
 // --------------------------------
+openni::Status openSixenseDevice();
 bool isSixenseEnabled();
 void setSixenseEnabled(bool enabled);
-const & sixenseControllerData getSixenseController(int controller_no);
-
+openni::Status updateSixenseData();
+const sixenseControllerData & getSixenseController(int controller_no);
+void getSixenseMessage(char* output_buffer);
 
 #endif //__DEVICE_H__
