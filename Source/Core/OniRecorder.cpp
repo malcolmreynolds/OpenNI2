@@ -207,7 +207,19 @@ Recorder::~Recorder()
 
 OniStatus Recorder::initialize(const char* fileName) //, XnBool recordSixense)
 {
+    const char* sixense_suffix = ".sixense";
+
     m_fileName = fileName;
+    m_sixenseFileName = fileName;
+    m_sixenseFileName.Resize(m_fileName.Size() + strlen(sixense_suffix) + 1);
+    for (uint64_t i = 0; i < strlen(sixense_suffix); i++) {
+        m_sixenseFileName[strlen(fileName) + i] = sixense_suffix[i];
+    }
+    m_sixenseFileName[strlen(fileName) + strlen(sixense_suffix)]= '\0';
+
+    printf("initialised with normal output to %s, sixense output to %s\n",
+           m_fileName.Data(), m_sixenseFileName.Data());
+
 
     // Probe if we can actually open the file.
     XN_FILE_HANDLE fileHandle = XN_INVALID_FILE_HANDLE;
@@ -237,6 +249,8 @@ OniStatus Recorder::initialize(const char* fileName) //, XnBool recordSixense)
 
 void Recorder::setSixenseRecording(OniBool enabled) {
     m_recordSixense = enabled;
+
+
 }
 
 OniStatus Recorder::attachStream(VideoStream& stream, OniBool allowLossyCompression)
@@ -1005,16 +1019,16 @@ void Recorder::onRecord(XnUInt32 nodeId, XnCodecBase* pCodec, const OniFrame* pF
         return;
     }
 
-    printf("recording timestamp %llu\n", timestamp);
     if (m_recordSixense) {
-        printf("trying to record sixense..\n");
-    //     // print
-    //     // See if we already have an entry for this in the hashtable
-    //     xnl::LockGuard<SixenseDataStore> guard(m_sixenseData);
-    //     if (m_sixenseData.Find(timestamp) == m_sixenseData.End()) {
-    //         printf("need to record sixense data for timestamp %llu\n", timestamp);
-    //         // m_sixenseData[timestamp] = make a copy of the sixense data;
-    //     }
+        xnl::LockGuard<SixenseDataStore> guard(m_sixenseData);
+        if (m_sixenseData.Find(timestamp) == m_sixenseData.End()) {
+            printf("need to record sixense data for timestamp %llu\n", timestamp);
+            sixenseGetAllNewestData(&(m_sixenseData[timestamp]));
+            // m_sixenseData[timestamp].controllers[0].pos[0] = 4.;
+        }
+        else {
+            printf("already got sixense for timestamp %llu\n", timestamp);
+        }
 
     }
 

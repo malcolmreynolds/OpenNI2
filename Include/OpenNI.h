@@ -2560,6 +2560,10 @@ public:
                 allowLossyCompression);
     }
 
+    void setSixenseRecording(OniBool enabled) {
+    	oniRecorderSetSixenseRecording(m_recorder, enabled);
+    }
+
     /**
      * Starts recording. 
 	 * Once this method is called, the recorder will take all subsequent frames from the attached streams

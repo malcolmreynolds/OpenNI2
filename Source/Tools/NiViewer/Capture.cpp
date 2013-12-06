@@ -197,9 +197,10 @@ void captureStart(int nDelay)
 	if (isSixenseEnabled())
 	{
 		displayMessage("starting Sixense recording");
-		g_Capture.sixenseFileHandle.open(g_Capture.sixenseFileName, std::ios::out);
-		// Other setup to get the correct formatting, etc...
-		g_Capture.sixenseFileHandle.precision(10);
+		g_Capture.recorder.setSixenseRecording(true);
+		// g_Capture.sixenseFileHandle.open(g_Capture.sixenseFileName, std::ios::out);
+		// // Other setup to get the correct formatting, etc...
+		// g_Capture.sixenseFileHandle.precision(10);
 	}
 
 	XnUInt64 nNow;

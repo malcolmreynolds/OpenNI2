@@ -384,6 +384,18 @@ ONI_C_API OniStatus oniCreateRecorder(
     return g_Context.recorderOpen(fileName, pRecorder);
 }
 
+ONI_C_API OniStatus oniRecorderSetSixenseRecording(
+		OniRecorderHandle	recorder,
+		OniBool             enabled)
+{
+	g_Context.clearErrorLogger();
+	if (NULL == recorder) {
+		return ONI_STATUS_BAD_PARAMETER;
+	}
+	recorder->pRecorder->setSixenseRecording(enabled);
+	return ONI_STATUS_OK;
+}
+
 ONI_C_API OniStatus oniRecorderAttachStream(
         OniRecorderHandle   recorder, 
         OniStreamHandle     stream, 

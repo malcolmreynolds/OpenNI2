@@ -160,6 +160,10 @@ ONI_C_API OniStatus oniRecorderAttachStream(
         OniStreamHandle     stream, 
         OniBool             allowLossyCompression);
 
+ONI_C_API OniStatus oniRecorderSetSixenseRecording(
+		OniRecorderHandle   recoder,
+		OniBool 			enabled);
+
 /**
  * Starts recording. There must be at least one stream attached to the recorder,
  * if not: oniRecorderStart will return an error.

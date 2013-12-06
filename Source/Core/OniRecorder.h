@@ -247,6 +247,7 @@ private:
     XN_THREAD_HANDLE m_thread;
     FileHeaderData   m_fileHeader;  //< Will be patched during termination.
     xnl::String      m_fileName;
+    xnl::String      m_sixenseFileName;
     XN_FILE_HANDLE   m_file;
     XnBool           m_running;     //< TRUE whenever the threadMain is running.
     XnBool           m_started;     //< TRUE whenever the recorder has started.
