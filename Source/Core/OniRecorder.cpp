@@ -1006,7 +1006,8 @@ void Recorder::onRecord(XnUInt32 nodeId, XnCodecBase* pCodec, const OniFrame* pF
     }
 
     printf("recording timestamp %llu\n", timestamp);
-    // if (m_recordSixense) {
+    if (m_recordSixense) {
+        printf("trying to record sixense..\n");
     //     // print
     //     // See if we already have an entry for this in the hashtable
     //     xnl::LockGuard<SixenseDataStore> guard(m_sixenseData);
@@ -1015,7 +1016,7 @@ void Recorder::onRecord(XnUInt32 nodeId, XnCodecBase* pCodec, const OniFrame* pF
     //         // m_sixenseData[timestamp] = make a copy of the sixense data;
     //     }
 
-    // }
+    }
 
     FIND_ATTACHED_STREAM_INFO(nodeId)
     if (!pInfo) return;
