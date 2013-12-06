@@ -26,6 +26,10 @@
 #include "Device.h"
 #include "Draw.h"
 
+#include <iostream>
+#include <fstream>
+#include <ctime>
+
 #if (XN_PLATFORM == XN_PLATFORM_WIN32)
 #include <Commdlg.h>
 #endif
@@ -35,53 +39,7 @@
 // --------------------------------
 #define CAPTURED_FRAMES_DIR_NAME "CapturedFrames"
 
-// --------------------------------
-// Types
-// --------------------------------
-typedef enum
-{
-	NOT_CAPTURING,
-	SHOULD_CAPTURE,
-	CAPTURING,
-} CapturingState;
 
-typedef enum
-{
-	CAPTURE_DEPTH_STREAM,
-	CAPTURE_COLOR_STREAM,
-	CAPTURE_IR_STREAM,
-	CAPTURE_STREAM_COUNT
-} CaptureSourceType;
-
-typedef enum
-{
-	STREAM_CAPTURE_LOSSLESS = FALSE,
-	STREAM_CAPTURE_LOSSY = TRUE,
-	STREAM_DONT_CAPTURE,
-} StreamCaptureType;
-
-typedef struct StreamCapturingData
-{
-	StreamCaptureType captureType;
-	const char* name;
-	bool bRecording;
-	openni::VideoFrameRef& (*getFrameFunc)();
-	openni::VideoStream&  (*getStream)();	
-	bool (*isStreamOn)();
-	int startFrame;
-} StreamCapturingData;
-
-typedef struct CapturingData
-{
-	StreamCapturingData streams[CAPTURE_STREAM_COUNT];
-	openni::Recorder recorder;
-	char csFileName[256];
-	int nStartOn; // time to start, in seconds
-	bool bSkipFirstFrame;
-	CapturingState State;
-	int nCapturedFrameUniqueID;
-	char csDisplayMessage[500];
-} CapturingData;
 
 // --------------------------------
 // Static Global Variables
@@ -142,6 +100,7 @@ void captureInit()
 
 	// Init
 	g_Capture.csFileName[0] = 0;
+	g_Capture.sixenseFileName[0] = 0;
 	g_Capture.State = NOT_CAPTURING;
 	g_Capture.nCapturedFrameUniqueID = 0;
 	g_Capture.csDisplayMessage[0] = '\0';
@@ -167,6 +126,10 @@ void captureInit()
 bool isCapturing()
 {
 	return (g_Capture.State != NOT_CAPTURING);
+}
+
+const CapturingData & getCapturingData() {
+	return g_Capture;
 }
 
 void captureBrowse(int)
@@ -195,7 +158,18 @@ void captureBrowse(int)
 	}
 #else
     // Set capture file to defaults.
-    strcpy(g_Capture.csFileName, "./Captured.oni");
+    time_t rawtime;
+    struct tm * timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(g_Capture.csFileName, OUTPUT_FNAME_LENGTH,
+    	     "./%y%m%d_%H%M_asus_data.oni", timeinfo);
+    if (isSixenseEnabled()) {
+	    strftime(g_Capture.sixenseFileName, OUTPUT_FNAME_LENGTH,
+    		     "./%y%m%d_%H%M_sixense_data.txt", timeinfo);
+	}
+
 #endif // ONI_PLATFORM_WIN32
 
 	// as we waited for user input, it's probably better to discard first frame (especially if an accumulating
@@ -220,6 +194,13 @@ void captureStart(int nDelay)
 		displayError("Failed to create recorder!");
 		return;
 	}
+	if (isSixenseEnabled())
+	{
+		displayMessage("starting Sixense recording");
+		g_Capture.sixenseFileHandle.open(g_Capture.sixenseFileName, std::ios::out);
+		// Other setup to get the correct formatting, etc...
+		g_Capture.sixenseFileHandle.precision(10);
+	}
 
 	XnUInt64 nNow;
 	xnOSGetTimeStamp(&nNow);
@@ -241,6 +222,9 @@ void captureStop(int)
     {
         g_Capture.recorder.destroy();
 		g_Capture.State = NOT_CAPTURING;
+    }
+    if (isSixenseEnabled()) {
+    	g_Capture.sixenseFileHandle.close();
     }
 }
 
@@ -280,21 +264,65 @@ void captureRun()
 			for (int i = 0; i < CAPTURE_STREAM_COUNT; ++i)
 			{
 				g_Capture.streams[i].bRecording = false;
+				printf("examining stream %d... ", i);
+
+
 
 				if (g_Capture.streams[i].isStreamOn() && g_Capture.streams[i].captureType != STREAM_DONT_CAPTURE)
 				{
+					printf("attaching stream %d\n", i);
 					nRetVal = g_Capture.recorder.attach(g_Capture.streams[i].getStream(), g_Capture.streams[i].captureType == STREAM_CAPTURE_LOSSY);
 					START_CAPTURE_CHECK_RC(nRetVal, "add stream");
 					g_Capture.streams[i].bRecording = TRUE;
 					g_Capture.streams[i].startFrame = g_Capture.streams[i].getFrameFunc().getFrameIndex();
 				}
+				else {
+					if (!g_Capture.streams[i].isStreamOn()) {
+						printf("stream %d is not on\n", i);
+					}
+					else if (g_Capture.streams[i].captureType == STREAM_DONT_CAPTURE) {
+						printf("stream %d is set as STREAM_DONT_CAPTURE\n", i);
+					}
+				}
 			}
+
+			// We have just written out all the frames to the oni file,
+			// so now output the sixense data if appropriate
+			if (isSixenseEnabled()) {
+				outputSixenseFrame();
+			}
+
 
 			nRetVal = g_Capture.recorder.start();
 			START_CAPTURE_CHECK_RC(nRetVal, "start recording");
 			g_Capture.State = CAPTURING;
 		}
 	}
+}
+
+void outputSixenseFrame()
+{
+	printf("Outputting Sixense Frame\n");
+	std::ofstream & out = g_Capture.sixenseFileHandle;
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		const sixenseControllerData & cd = getSixenseController(i);
+		// Translation
+		out << cd.pos[0] << " " << cd.pos[1] << " "  << cd.pos[2] << std::endl;
+		// Rotation matrix. Hope this is the right way round!
+		out << cd.rot_mat[0][0] << " " << cd.rot_mat[0][1] << " " << cd.rot_mat[0][2] << " "
+			<< cd.rot_mat[1][0] << " " << cd.rot_mat[1][1] << " " << cd.rot_mat[1][2] << " " 
+			<< cd.rot_mat[2][0] << " " << cd.rot_mat[2][1] << " " << cd.rot_mat[2][2] << std::endl;
+		out << cd.joystick_x << " " << cd.joystick_y << " " << cd.trigger << " " << cd.buttons << std::endl;
+		out << (unsigned int)cd.sequence_number << std::endl;
+		out << cd.rot_quat[0] << " " << cd.rot_quat[1] << " "
+		    << cd.rot_quat[2] << " " << cd.rot_quat[3] << std::endl;
+		out << cd.firmware_revision << " " << cd.hardware_revision << std::endl;
+		out << cd.packet_type << " " << cd.magnetic_frequency << " " << cd.enabled << std::endl;
+		out << cd.controller_index << " " << (unsigned int)cd.is_docked
+			<< " " << (unsigned int)cd.which_hand << " " << (unsigned int)cd.hemi_tracking_enabled << std::endl;
+	}
+	out << std::endl;
 }
 
 void captureSetDepthFormat(int format)

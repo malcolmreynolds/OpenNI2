@@ -24,6 +24,8 @@
 #include "OpenNI.h"
 #include "Device.h"
 #include "Draw.h"
+#include "Capture.h"
+
 #include <math.h>
 #include <XnLog.h>
 #include <PS1080.h>
@@ -65,6 +67,10 @@ openni::VideoStream g_irStream;
 openni::VideoFrameRef g_depthFrame;
 openni::VideoFrameRef g_colorFrame;
 openni::VideoFrameRef g_irFrame;
+
+int depth_frames_recorded = 0;
+int color_frames_recorded = 0;
+int ir_frames_recorded = 0;
 
 const openni::SensorInfo* g_depthSensorInfo = NULL;
 const openni::SensorInfo* g_colorSensorInfo = NULL;
@@ -338,6 +344,8 @@ void closeDevice()
 	openni::OpenNI::shutdown();
 }
 
+
+
 void readFrame()
 {
 	openni::Status rc = openni::STATUS_OK;
@@ -350,14 +358,23 @@ void readFrame()
 		rc = openni::OpenNI::waitForAnyStream(streams, 3, &changedIndex, 0);
 		if (rc == openni::STATUS_OK)
 		{
+			const CapturingData & cap_data = getCapturingData();
+
 			switch (changedIndex)
 			{
 			case 0:
-				g_depthStream.readFrame(&g_depthFrame); break;
+				g_depthStream.readFrame(&g_depthFrame); 
+				// printf("read depth in readFrame()\n");
+				// if (cap_data)
+				break;
 			case 1:
-				g_colorStream.readFrame(&g_colorFrame); break;
+				g_colorStream.readFrame(&g_colorFrame);
+				// printf("read color in readFrame()\n");
+				break;
 			case 2:
-				g_irStream.readFrame(&g_irFrame); break;
+				g_irStream.readFrame(&g_irFrame);
+				// printf("read ir in readFrame()\n");
+				break;
 			default:
 				printf("Error in wait\n");
 			}
@@ -575,6 +592,20 @@ void toggleColorState(int)
 void toggleIRState(int)
 {
 	toggleStreamState(g_irStream, g_irFrame, g_bIsIROn, openni::SENSOR_IR, "IR");
+}
+
+void toggleColorOrIR(int)
+{
+	// Only one of color and IR can be active at once, so must turn off the
+	// active one before we do anything else
+	if (isColorOn()) {
+		toggleColorState(0);
+		toggleIRState(0);
+	}
+	else {
+		toggleIRState(0);
+		toggleColorState(0);
+	}
 }
 
 bool isDepthOn()
@@ -970,8 +1001,6 @@ openni::Status updateSixenseData() {
 		printf("getAllNewestData failed\n");
 		return openni::STATUS_ERROR;
 	}
-	// printf("controller 0 pos: %f %f %f\n",
-	// 	acd.controllers[0].pos[0], acd.controllers[0].pos[1], acd.controllers[0].pos[2]);
 	return openni::STATUS_OK;
 }
 

@@ -205,7 +205,7 @@ Recorder::~Recorder()
     }
 }
 
-OniStatus Recorder::initialize(const char* fileName)
+OniStatus Recorder::initialize(const char* fileName) //, XnBool recordSixense)
 {
     m_fileName = fileName;
 
@@ -229,9 +229,15 @@ OniStatus Recorder::initialize(const char* fileName)
         return ONI_STATUS_ERROR;
     }
     
+    m_recordSixense = false;
+
     send(Message::MESSAGE_INITIALIZE);
     return ONI_STATUS_OK;
 }
+
+// void Recorder::setSixenseRecording(OniBool enabled) {
+//     m_recordSixense = enabled;
+// }
 
 OniStatus Recorder::attachStream(VideoStream& stream, OniBool allowLossyCompression)
 {
@@ -241,6 +247,9 @@ OniStatus Recorder::attachStream(VideoStream& stream, OniBool allowLossyCompress
     }
 
     xnl::LockGuard<AttachedStreams> guard(m_streams);
+    // see if the VideoStream already exists in m_streams, which is
+    // the list of streams currently being monitored. m_streams
+    // is a hash from videostream to attachedstreaminfo
     VideoStream* pStream = &stream;
     if (m_streams.Find(pStream) == m_streams.End())
     {
@@ -995,6 +1004,18 @@ void Recorder::onRecord(XnUInt32 nodeId, XnCodecBase* pCodec, const OniFrame* pF
     {
         return;
     }
+
+    printf("recording timestamp %llu\n", timestamp);
+    // if (m_recordSixense) {
+    //     // print
+    //     // See if we already have an entry for this in the hashtable
+    //     xnl::LockGuard<SixenseDataStore> guard(m_sixenseData);
+    //     if (m_sixenseData.Find(timestamp) == m_sixenseData.End()) {
+    //         printf("need to record sixense data for timestamp %llu\n", timestamp);
+    //         // m_sixenseData[timestamp] = make a copy of the sixense data;
+    //     }
+
+    // }
 
     FIND_ATTACHED_STREAM_INFO(nodeId)
     if (!pInfo) return;

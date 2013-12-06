@@ -37,6 +37,10 @@
 #include "OniStream.h"
 #include "OniCTypes.h"
 
+// OUCH
+#include <sixense.h>
+
+
 ONI_NAMESPACE_IMPLEMENTATION_BEGIN
 
 class VideoStream;
@@ -63,7 +67,9 @@ public:
      * Initializes the recorder.
      * @param fileName The file that will store the recording.
      */
-    OniStatus initialize(const char* fileName);
+    OniStatus initialize(const char* fileName); //, XnBool recordSixense = false);
+
+    // void setSixenseRecording(OniBool enabled);
 
     /**
      * Attaches a stream to the recorder. Can not be done if Start() has been
@@ -211,6 +217,10 @@ private:
     typedef xnl::Lockable< xnl::Hash<VideoStream*, AttachedStreamInfo> > AttachedStreams;
     AttachedStreams m_streams;
 
+    // map from timestamps to Sixense information
+    typedef xnl::Lockable< xnl::Hash<XnUInt64, sixenseAllControllerData> > SixenseDataStore;
+    SixenseDataStore m_sixenseData;
+
     // A helper function for the properties' undoRecordPos
     XnUInt64 getLastPropertyRecordPos(XnUInt32 nodeId, const char *propName, XnUInt64 newRecordPos);
 
@@ -241,6 +251,7 @@ private:
     XnBool           m_running;     //< TRUE whenever the threadMain is running.
     XnBool           m_started;     //< TRUE whenever the recorder has started.
     XnBool           m_wasStarted;  //< TRUE if the recorder has been started once.
+    XnBool           m_recordSixense;
 
 // Get rid of macros:
 #undef ONI_DISABLE_COPY_AND_ASSIGN

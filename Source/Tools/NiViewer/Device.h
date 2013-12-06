@@ -85,6 +85,7 @@ void seekFrameAbs(int frameId);
 void toggleDepthState(int nDummy);
 void toggleColorState(int nDummy);
 void toggleIRState(int nDummy);
+void toggleColorOrIR(int nDummy);
 void toggleAudioState(int nDummy);
 void getDepthFormats(const char** pNames, unsigned int* pValues, int* pCount);
 void getImageFormats(const char** pNames, unsigned int* pValues, int* pCount);

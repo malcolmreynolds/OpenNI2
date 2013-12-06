@@ -8,6 +8,7 @@ INC_DIRS = \
 	../Drivers/OniFile/Formats \
 	../../ThirdParty/LibJPEG
 
+
 SRC_FILES = \
 	*.cpp \
 	../Drivers/OniFile/Formats/XnCodec.cpp \
@@ -17,6 +18,7 @@ SRC_FILES = \
 ifeq ("$(OSTYPE)","Darwin")
 	INC_DIRS += /opt/local/include
 	LIB_DIRS += /opt/local/lib
+	INC_DIRS += /Users/malc/opt/vis/sixense/include
 	LDFLAGS += -framework CoreFoundation -framework IOKit
 endif
 

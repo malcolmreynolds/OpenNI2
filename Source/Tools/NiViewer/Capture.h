@@ -25,6 +25,8 @@
 // Includes
 // --------------------------------
 #include "Device.h"
+#include <iostream>
+#include <fstream>
 
 // --------------------------------
 // Global Variables
@@ -32,6 +34,61 @@
 extern DeviceParameter g_DepthCapturing;
 extern DeviceParameter g_ColorCapturing;
 extern DeviceParameter g_IRCapturing;
+
+
+// --------------------------------
+// Types - had to move these to the header
+// because I'm doing something very silly.
+// --------------------------------
+typedef enum
+{
+	NOT_CAPTURING,
+	SHOULD_CAPTURE,
+	CAPTURING,
+} CapturingState;
+
+typedef enum
+{
+	CAPTURE_DEPTH_STREAM,
+	CAPTURE_COLOR_STREAM,
+	CAPTURE_IR_STREAM,
+	CAPTURE_STREAM_COUNT
+} CaptureSourceType;
+
+typedef enum
+{
+	STREAM_CAPTURE_LOSSLESS = FALSE,
+	STREAM_CAPTURE_LOSSY = TRUE,
+	STREAM_DONT_CAPTURE,
+} StreamCaptureType;
+
+typedef struct StreamCapturingData
+{
+	StreamCaptureType captureType;
+	const char* name;
+	bool bRecording;
+	openni::VideoFrameRef& (*getFrameFunc)();
+	openni::VideoStream&  (*getStream)();	
+	bool (*isStreamOn)();
+	int startFrame;
+} StreamCapturingData;
+
+#define OUTPUT_FNAME_LENGTH 512
+
+typedef struct CapturingData
+{
+	StreamCapturingData streams[CAPTURE_STREAM_COUNT];
+	openni::Recorder recorder;
+	char csFileName[OUTPUT_FNAME_LENGTH];
+	char sixenseFileName[OUTPUT_FNAME_LENGTH];
+	int nStartOn; // time to start, in seconds
+	bool bSkipFirstFrame;
+	CapturingState State;
+	int nCapturedFrameUniqueID;
+	char csDisplayMessage[500];
+	// Handle for the file we are spitting Sixense Data into
+	std::ofstream sixenseFileHandle;
+} CapturingData;
 
 // --------------------------------
 // Function Declarations
@@ -43,6 +100,8 @@ void captureRestart(int);
 void captureStop(int);
 bool isCapturing();
 
+const CapturingData & getCapturingData();
+
 void captureSetDepthFormat(int format);
 void captureSetColorFormat(int format);
 void captureSetIRFormat(int format);
@@ -51,6 +110,7 @@ const char* captureGetColorFormatName();
 const char* captureGetIRFormatName();
 
 void captureRun();
+void outputSixenseFrame();
 void captureSingleFrame(int);
 
 void getCaptureMessage(char* pMessage);

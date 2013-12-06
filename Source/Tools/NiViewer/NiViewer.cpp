@@ -193,7 +193,7 @@ void idleCallback()
 		// read a frame
 		readFrame();
 		if (isSixenseEnabled()) {
-			
+			updateSixenseData();
 		}
 
 		captureRun();
@@ -317,6 +317,7 @@ void createKeyboardMap()
 			registerKey('y', "Frame sync on/off", toggleFrameSync, 0);
  			registerKey('m', "Mirror on/off", toggleMirror, 0);
  			registerKey('/', "Reset all croppings", resetAllCropping, 0);
+ 			registerKey('t', "Switch RGB <-> IR", toggleColorOrIR, 0);
 
 			registerKey('a', "toggle Auto Exposure", toggleImageAutoExposure, 0);
 			registerKey('q', "toggle AWB", toggleImageAutoWhiteBalance, 0);
@@ -733,15 +734,6 @@ int main(int argc, char **argv)
 	glutCreateWindow("OpenNI Viewer");
 	glutFullScreen();
 	glutSetCursor(GLUT_CURSOR_NONE);
-
-	// if (bCaptureSixense) {
-	// 	printf("trying to initialise sixense\n");
-	// 	if (sixenseInit() != SIXENSE_SUCCESS) {
-	// 		printf("Sixense API initialisation failed\n");
-	// 		return(-1);
-	// 	}
-	// 	printf("initialised Sixense API\n");
-	// }
 
 	init_opengl();
 
