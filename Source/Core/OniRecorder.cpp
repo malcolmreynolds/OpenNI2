@@ -235,9 +235,9 @@ OniStatus Recorder::initialize(const char* fileName) //, XnBool recordSixense)
     return ONI_STATUS_OK;
 }
 
-// void Recorder::setSixenseRecording(OniBool enabled) {
-//     m_recordSixense = enabled;
-// }
+void Recorder::setSixenseRecording(OniBool enabled) {
+    m_recordSixense = enabled;
+}
 
 OniStatus Recorder::attachStream(VideoStream& stream, OniBool allowLossyCompression)
 {

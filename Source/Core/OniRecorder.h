@@ -69,7 +69,7 @@ public:
      */
     OniStatus initialize(const char* fileName); //, XnBool recordSixense = false);
 
-    // void setSixenseRecording(OniBool enabled);
+    void setSixenseRecording(OniBool enabled);
 
     /**
      * Attaches a stream to the recorder. Can not be done if Start() has been
