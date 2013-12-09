@@ -22,6 +22,9 @@
 
 #include "XnLockGuard.h"
 
+#include <iostream>
+#include <fstream>
+
 // These come from OniFile/Formats:
 #include "Xn16zEmbTablesCodec.h"
 #include "XnJpegCodec.h"
@@ -249,8 +252,6 @@ OniStatus Recorder::initialize(const char* fileName) //, XnBool recordSixense)
 
 void Recorder::setSixenseRecording(OniBool enabled) {
     m_recordSixense = enabled;
-
-
 }
 
 OniStatus Recorder::attachStream(VideoStream& stream, OniBool allowLossyCompression)
@@ -545,6 +546,20 @@ void Recorder::onInitialize()
         return;                                                 \
     }
 
+#define EMIT_STR(str, file_hnd)                                     \
+    if (ONI_STATUS_OK == (m_assembler.emitString(str, strlen(str)))\
+    {                                                               \
+        if (ONI_STATUS_OK != m_assembler.serialize(file_hnd))       \
+        {                                                           \
+            return;                                                 \
+        }                                                           \
+    }                                                               \
+    else                                                            \
+    {                                                               \
+        return;                                                     \
+    }
+
+
 #define FIND_ATTACHED_STREAM_INFO(nodeId) \
     AttachedStreamInfo *pInfo = NULL; \
     xnl::LockGuard<AttachedStreams> guard(m_streams); \
@@ -574,6 +589,68 @@ XnUInt64 Recorder::getLastPropertyRecordPos(XnUInt32 nodeId, const char *propNam
     return pos;
 }
 
+void Recorder::outputSixenseData()
+{
+    printf("outputting all sixense data to %s...", m_sixenseFileName.Data());
+
+    std::ofstream of(m_sixenseFileName.Data());
+
+    of << "#!/usr/bin/env python" << std::endl << std::endl;
+    of << "sixense_locations = {" << std::endl;
+
+    // Loop through the hash in order
+    for (SixenseDataStore::Iterator i = m_sixenseData.Begin(),
+         end = m_sixenseData.End(); i != end; i++) {
+
+        XnUInt64 tstamp = i->Key();
+        // loop through controllers
+        of << "  " << tstamp << ": [" << std::endl;
+        for (unsigned int c_no = 0; c_no < 4; c_no++) {
+            const sixenseControllerData & cd = m_sixenseData[tstamp].controllers[c_no];
+            // Translation
+            of << "(" << cd.pos[0] << ", " << cd.pos[1] << ", "  << cd.pos[2] << ", ";
+            // Rotation matrix. Hope this is the right way round!
+            of << cd.rot_mat[0][0] << ", " << cd.rot_mat[0][1] << ", " << cd.rot_mat[0][2] << ", "
+                << cd.rot_mat[1][0] << ", " << cd.rot_mat[1][1] << ", " << cd.rot_mat[1][2] << ", " 
+                << cd.rot_mat[2][0] << ", " << cd.rot_mat[2][1] << ", " << cd.rot_mat[2][2] << ",";
+            of << cd.joystick_x << ", " << cd.joystick_y << ", " << cd.trigger << ", " << cd.buttons << ", ";
+            of << (unsigned int)cd.sequence_number << ",";
+            of << cd.rot_quat[0] << ", " << cd.rot_quat[1] << ", "
+                << cd.rot_quat[2] << ", " << cd.rot_quat[3] << ", ";
+            of << cd.firmware_revision << ", " << cd.hardware_revision << ", ";
+            of << cd.packet_type << ", " << cd.magnetic_frequency << ", " << cd.enabled << ", ";
+            of << cd.controller_index << ", " << (unsigned int)cd.is_docked
+                << ", " << (unsigned int)cd.which_hand << ", " << (unsigned int)cd.hemi_tracking_enabled << ")," << std::endl;            
+        }
+        of << "  ]," << std::endl;
+
+    }
+
+    of << "}" << std::endl;
+
+    // xnl::LockGuard<AttachedStreams> guard(m_streams);
+    // for (AttachedStreams::Iterator 
+    //             i = m_streams.Begin(),
+    //             e = m_streams.End();
+    //      i != e; ++i)
+    // {
+    //     detachStream(*i->Key());
+    // }
+    // // return ONI_STATUS_OK;
+
+
+
+    // XnStatus stat = xnOSOpenFile(m_sixenseFileName.Data(),
+    //                              XN_OS_FILE_WRITE | XN_OS_FILE_TRUNCATE,
+    //                              &m_sixenseFile);
+    // if (stat != XN_STATUS_OK) {
+    //     printf("ERROR: Couldn't open file for Sixense data\n");
+    // }
+    // EMIT_STR("test test test\n", m_sixenseFileName);
+
+    // stat = xnOSCloseFile(&m_sixenseFileName);
+}
+
 void Recorder::onTerminate()
 {
     // Truncate the file to it's last offset, so that undone records
@@ -596,6 +673,10 @@ void Recorder::onTerminate()
 
     xnOSCloseFile(&m_file);
     m_file = XN_INVALID_FILE_HANDLE;
+
+    if (m_recordSixense) {
+        outputSixenseData();
+    }
 }
 
 typedef enum XnPixelFormat

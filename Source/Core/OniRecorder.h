@@ -166,6 +166,9 @@ private:
             XnSizeT     dataSize   = 0u,
 			int priority = ms_priorityNormal);
 
+    //sixense thing..
+    void outputSixenseData();
+
     // Message handlers:
     void onInitialize();
     void onTerminate();
@@ -249,6 +252,7 @@ private:
     xnl::String      m_fileName;
     xnl::String      m_sixenseFileName;
     XN_FILE_HANDLE   m_file;
+    XN_FILE_HANDLE   m_sixenseFile;
     XnBool           m_running;     //< TRUE whenever the threadMain is running.
     XnBool           m_started;     //< TRUE whenever the recorder has started.
     XnBool           m_wasStarted;  //< TRUE if the recorder has been started once.
